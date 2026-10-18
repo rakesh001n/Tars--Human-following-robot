@@ -1,0 +1,159 @@
+<?xml version="1.0" ?>
+<robot name="robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:arg name="use_ros2_control" default="true"/>
+<xacro:property name="use_ros2_control" value="$(arg use_ros2_control)"/>
+
+<xacro:include filename="$(find robot_description)/urdf/materials.xacro" />
+<xacro:include filename="$(find robot_description)/urdf/robot.gazebo" />
+
+<xacro:if value="${use_ros2_control}">
+  <ros2_control name="GazeboSystem" type="system">
+    <hardware>
+      <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+    </hardware>
+    <joint name="Revolute 1">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="Revolute 2">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+</xacro:if>
+
+<link name="base_link">
+  <inertial>
+    <origin xyz="-3.467800946074168e-08 0.02765437651265111 0.0005374932268026311" rpy="0 0 0"/>
+    <mass value="5.44473712181124"/>
+    <inertia ixx="0.122616" iyy="0.222783" izz="0.121986" ixy="-0.0" iyz="-0.000126" ixz="0.0"/>
+  </inertial>
+  <visual>
+    <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+    <geometry>
+      <mesh filename="file://$(find robot_description)/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="Blue"/>
+  </visual>
+  <collision>
+    <!-- Keep collision geometry aligned with the Fusion-exported visual mesh. -->
+    <!-- Keep the chassis off the ground; the wheels provide the ground contact. -->
+    <origin xyz="0 0 0.08" rpy="1.5708 0 0"/>
+    <geometry>
+      <mesh filename="file://$(find robot_description)/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+
+</link>
+
+<link name="left_wheel_v2_1">
+  <inertial>
+    <origin xyz="-0.007000000000000006 -2.4079335537687613e-16 2.8740308442512036e-16" rpy="0 0 0"/>
+    <mass value="1.5709376984643062"/>
+    <inertia ixx="0.003584" iyy="0.001818" izz="0.001818" ixy="-0.0" iyz="-0.0" ixz="0.0"/>
+  </inertial>
+  <visual>
+    <origin xyz="-0.199 -0.0 -0.0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="file://$(find robot_description)/meshes/left_wheel_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+  </visual>
+  <collision>
+    <origin xyz="-0.199 -0.0 -0.0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="file://$(find robot_description)/meshes/left_wheel_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="right_wheel_v2_1">
+  <inertial>
+    <origin xyz="0.007000000000000062 0.0 3.6358072842210572e-16" rpy="0 0 0"/>
+    <mass value="1.5709376984643066"/>
+    <inertia ixx="0.003584" iyy="0.001818" izz="0.001818" ixy="-0.0" iyz="0.0" ixz="-0.0"/>
+  </inertial>
+  <visual>
+    <origin xyz="0.199 -0.0 -0.0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="file://$(find robot_description)/meshes/right_wheel_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+  </visual>
+  <collision>
+    <origin xyz="0.199 -0.0 -0.0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="file://$(find robot_description)/meshes/right_wheel_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="lidar_v2_1">
+  <inertial>
+    <origin xyz="-4.263357981435317e-05 -0.6753469745387766305 8.120050324805783e-05" rpy="0 0 0"/>
+    <mass value="0.059473228691739634"/>
+    <inertia ixx="4e-06" iyy="7e-06" izz="4e-06" ixy="-0.0" iyz="0.0" ixz="0.0"/>
+  </inertial>
+  <visual>
+    <origin xyz="0 0.0 -0.175" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="file://$(find robot_description)/meshes/lidar_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+  </visual>
+  <collision>
+    <origin xyz="5.8e-05 -0.019 -0.175" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="file://$(find robot_description)/meshes/lidar_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<joint name="Revolute 1" type="continuous">
+  <origin xyz="0.199 0.0 0.0" rpy="0 0 0"/>
+  <parent link="base_link"/>
+  <child link="left_wheel_v2_1"/>
+  <axis xyz="-1.0 0.0 0.0"/>
+</joint>
+
+<joint name="Revolute 2" type="continuous">
+  <origin xyz="-0.199 0.0 0.0" rpy="0 0 0"/>
+  <parent link="base_link"/>
+  <child link="right_wheel_v2_1"/>
+  <axis xyz="-1.0 0.0 0.0"/>
+</joint>
+
+<joint name="Revolute 3" type="fixed">
+  <origin xyz="-5.8e-05 -0.175 -0.000005" rpy="1.5708 0 0"/>
+  <parent link="base_link"/>
+  <child link="lidar_v2_1"/>
+  <axis xyz="0.0 1.0 0.0"/>
+</joint>
+
+<link name="imu_link"/>
+<joint name="imu_joint" type="fixed">
+  <origin xyz="0 0 0.12" rpy="0 0 0"/>
+  <parent link="base_link"/>
+  <child link="imu_link"/>
+</joint>
+
+<link name="camera_link"/>
+<joint name="camera_joint" type="fixed">
+  <!-- The Fusion model's forward direction is +Y. -->
+  <!-- Camera looks backward along -Y. -->
+  <origin xyz="0 0.12 0.12" rpy="0 0 -1.5708"/>
+  <parent link="base_link"/>
+  <child link="camera_link"/>
+</joint>
+
+<link name="camera_optical_frame"/>
+<joint name="camera_optical_joint" type="fixed">
+  <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+  <parent link="camera_link"/>
+  <child link="camera_optical_frame"/>
+</joint>
+
+</robot>
