@@ -1,0 +1,153 @@
+Project Prompt: Human-Following Cart AMR
+
+You are helping develop a Human-Following Cart AMR simulation using ROS 2 Humble, Gazebo Classic, and Python. Work directly in the ROS 2 package named robot_description.
+
+Project objective
+Build a complete mobile robot simulation that can safely follow a person in Gazebo. The robot is a differential-drive cart based on a Fusion 360 exported Xacro model. Development must be incremental, testable, and suitable for later integration with person detection, localization, obstacle avoidance, and Nav2.
+
+Environment and constraints
+- Operating system: Ubuntu 22.04
+- ROS distribution: ROS 2 Humble
+- Simulator: Gazebo Classic, not Gazebo Sim or Ignition
+- Workspace: /home/rocky/ros2_ws
+- Package: /home/rocky/ros2_ws/src/robot_description
+- Robot forward direction: +Y in the Fusion 360 model
+- Wheel axle direction: X
+- Wheel separation: 0.398 m
+- Wheel radius: 0.0675 m
+- Use ros2_control and gazebo_ros2_control by default
+- Keep a legacy direct Gazebo diff-drive option available through use_ros2_control:=false when practical
+- Do not commit build/, install/, or log/ directories
+- Preserve existing user changes; do not reset or overwrite unrelated work
+- Prefer small, maintainable changes and verify every change with build and runtime tests
+
+Current robot interfaces
+- Drive controller: diff_drive_controller
+- Command input: /diff_drive_controller/cmd_vel_unstamped
+- Raw teleoperation input: /cmd_vel_raw
+- Smoothed velocity output: /diff_drive_controller/cmd_vel_unstamped
+- Odometry: /diff_drive_controller/odom
+- Joint states: /joint_states
+- Laser scan: /scan
+- IMU: /imu/data
+- Camera image: /camera/image_raw
+- Camera calibration: /camera/camera_info
+- TF frames include base_link, left_wheel_v2_1, right_wheel_v2_1, lidar_v2_1, imu_link, camera_link, and camera_optical_frame
+
+Implemented milestones
+
+Milestone 1: Drive, control, odometry, and TF
+- Configure ros2_control hardware interfaces for both drive wheels
+- Start joint_state_broadcaster and diff_drive_controller
+- Publish wheel joint states, odometry, and TF
+- Support keyboard teleoperation through cmd_vel_smoother
+- Use a launch event handler so controller spawners start after the robot is spawned
+- Verify controllers are active and the robot moves in Gazebo
+
+Milestone 2: Sensor simulation
+- Keep the lidar mount fixed
+- Simulate a 2D laser scanner publishing /scan
+- Simulate an IMU publishing /imu/data at approximately 100 Hz
+- Simulate an RGB camera publishing /camera/image_raw and /camera/camera_info at approximately 15 Hz
+- Keep camera optical frame conventions correct
+- The camera is mounted to look backward along -Y
+- Verify sensor topics, rates, and TF in a headless Gazebo smoke test
+
+Remaining milestones
+
+Milestone 3: Localization
+- Install and configure robot_localization
+- Fuse wheel odometry and IMU data in an EKF
+- Publish /odometry/filtered
+- Verify the odom to base_link transform and RViz behavior
+
+Milestone 4: Person detection and tracking
+- Add a simulated person or moving target to the Gazebo world
+- Decide whether RGB detection is sufficient or add a depth camera
+- Implement a perception node that detects and tracks the person
+- Publish a stable person pose or TF relative to the robot or camera frame
+
+Milestone 5: Person-following controller
+- Implement a controller that follows the detected person
+- Maintain a configurable following distance
+- Control linear and angular velocity with bounded acceleration
+- Stop safely when the person is too close, lost, or blocked
+- Publish commands to the diff-drive controller input
+
+Milestone 6: Nav2 and obstacle avoidance
+- Install the required Nav2 packages
+- Add mapping or a static map as appropriate
+- Configure costmaps, planners, controllers, and recovery behaviors
+- Integrate person-following commands with obstacle avoidance without conflicting command sources
+
+Milestone 7: Scenario behavior
+- Create a realistic test world and moving-person scenarios
+- Test walking, turning, stopping, temporary occlusion, and obstacle encounters
+- Confirm the robot remains stable and follows without collisions
+
+Milestone 8: Autonomy and recovery
+- Detect a lost person
+- Search and reacquire the person safely
+- Handle blocked paths, stale detections, command timeouts, and stalled motion
+- Ensure all safety stops have priority over following commands
+
+Milestone 9: Visualization and diagnostics
+- Add RViz displays for robot model, TF, laser scan, camera, odometry, and person tracking
+- Add diagnostics for sensor health, controller state, target visibility, and safety state
+- Document normal startup and troubleshooting commands
+
+Milestone 10: Tuning and validation
+- Tune controller gains, EKF parameters, sensor rates, and following distance
+- Measure tracking error, response time, stopping distance, and recovery time
+- Run repeatable acceptance tests and document results
+
+Important file locations
+- urdf/robot.xacro: robot links, joints, ros2_control interfaces, and sensor frames
+- urdf/robot.gazebo: Gazebo materials, friction, and sensor/control plugins
+- launch/gazebo.launch.py: Gazebo, robot spawn, robot state publisher, and controller startup
+- launch/teleop.launch.py: velocity smoother and keyboard teleoperation
+- config/controllers.yaml: controller manager and differential-drive parameters
+- robot_description/cmd_vel_smoother.py: acceleration-limited command smoothing
+- worlds/basic.world: primary walled test arena
+- package.xml and setup.py: package dependencies and installation rules
+
+Verification requirements
+After changes, use the following checks when applicable:
+
+1. Expand the Xacro:
+   ros2 run xacro xacro urdf/robot.xacro > /tmp/robot.urdf
+
+2. Build the package:
+   cd /home/rocky/ros2_ws
+   colcon build --packages-select robot_description
+   source install/setup.bash
+
+3. Launch Gazebo:
+   ros2 launch robot_description gazebo.launch.py
+
+4. Verify controllers:
+   ros2 control list_controllers
+
+5. Verify sensor topics:
+   ros2 topic list
+   ros2 topic hz /imu/data
+   ros2 topic hz /camera/image_raw
+   ros2 topic echo /scan --once
+
+6. Verify transforms:
+   ros2 run tf2_tools view_frames
+
+7. Test motion through the controller topic before debugging teleoperation:
+   ros2 topic pub --rate 10 /diff_drive_controller/cmd_vel_unstamped geometry_msgs/msg/Twist "{linear: {x: 0.2}, angular: {z: 0.0}}"
+
+When diagnosing startup failures, first stop stale Gazebo processes before relaunching:
+   pkill -9 gzserver
+   pkill -9 gzclient
+
+Expected engineering behavior
+- Inspect the existing files before editing.
+- Make the smallest correct change.
+- Do not hide runtime failures with arbitrary delays or duplicate nodes.
+- Check for duplicate Gazebo, teleop, or smoother processes when movement fails.
+- Preserve the established ROS topic and frame names unless a migration is intentional.
+- Report changed files, verification results, and any remaining limitations clearly.
